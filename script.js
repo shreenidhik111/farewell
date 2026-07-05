@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
             // ---------- 45 people ----------
             const names = [
                 "Emma Watson", "Liam Neeson", "Scarlett Johansson", "Dwayne Johnson", "Taylor Swift",
@@ -48,6 +48,8 @@
             let isAudioEnabled = true;
             let supabaseClient = null;
             let supabaseReady = false;
+            let wheelStateChannel = null;
+            let pendingRemoteState = null;
 
             const supabaseConfig = window.FAREWELL_SUPABASE_CONFIG || {};
             const SUPABASE_URL = supabaseConfig.url || '';
@@ -165,6 +167,47 @@
                 updateDisplays();
             }
 
+            function resetLocalState() {
+                pickedSet.clear();
+                pickedList.length = 0;
+                savedPeople.length = 0;
+                roundPicks = [];
+                currentPerson = null;
+                lastTargetNumber = null;
+                currentAngle = 0;
+                drawWheel(0);
+                updateDisplays();
+                spinBtn.disabled = false;
+                isSpinning = false;
+                overlay.classList.remove('active');
+                overlayImage.hidden = true;
+                overlayImage.removeAttribute('src');
+                overlayInitial.hidden = false;
+                spinDurationEl.textContent = '5s';
+                updateSpeedBar(0);
+                rotationCountEl.textContent = '5+';
+            }
+
+            function applyRemoteState(state) {
+                if (isSpinning) {
+                    pendingRemoteState = state || {};
+                    return;
+                }
+
+                if (state) {
+                    applyPersistedState(state);
+                } else {
+                    resetLocalState();
+                }
+
+                pendingRemoteState = null;
+            }
+
+            function flushPendingRemoteState() {
+                if (!pendingRemoteState || isSpinning) return;
+                applyRemoteState(Object.keys(pendingRemoteState).length ? pendingRemoteState : null);
+            }
+
             async function loadPersistedState() {
                 const client = initializeSupabaseClient();
                 if (!client) {
@@ -203,6 +246,7 @@
                 try {
                     await client.from('wheel_state').upsert({
                         id: 'main',
+                        updated_at: new Date().toISOString(),
                         data: {
                             pickedNumbers: Array.from(pickedSet),
                             pickedList: pickedList.map((person) => ({ ...person })),
@@ -216,6 +260,36 @@
                 } catch (error) {
                     console.warn('Supabase save failed:', error);
                 }
+            }
+
+            function subscribeToWheelState() {
+                const client = initializeSupabaseClient();
+                if (!client || wheelStateChannel) return;
+
+                wheelStateChannel = client
+                    .channel('wheel-state-live')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'wheel_state',
+                            filter: 'id=eq.main'
+                        },
+                        (payload) => {
+                            if (payload.eventType === 'DELETE') {
+                                applyRemoteState(null);
+                                return;
+                            }
+
+                            applyRemoteState(payload.new?.data || null);
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.info('Realtime wheel sync connected.');
+                        }
+                    });
             }
 
             // DOM refs
@@ -609,6 +683,7 @@
 
                             isSpinning = false;
                             spinBtn.disabled = false;
+                            flushPendingRemoteState();
 
                             if (pickedSet.size >= 45) {
                                 setTimeout(() => {
@@ -649,25 +724,7 @@
             async function clearAllState() {
                 if (!confirm('Clear all picks and reset the wheel?')) return;
 
-                pickedSet.clear();
-                pickedList.length = 0;
-                savedPeople.length = 0;
-                roundPicks = [];
-                currentPerson = null;
-                lastTargetNumber = null;
-                currentAngle = 0;
-
-                drawWheel(0);
-                updateDisplays();
-                spinBtn.disabled = false;
-                isSpinning = false;
-                overlay.classList.remove('active');
-                overlayImage.hidden = true;
-                overlayImage.removeAttribute('src');
-                overlayInitial.hidden = false;
-                spinDurationEl.textContent = '5s';
-                updateSpeedBar(0);
-                rotationCountEl.textContent = '5+';
+                resetLocalState();
 
                 const client = initializeSupabaseClient();
                 if (client) {
@@ -722,24 +779,7 @@
 
             // ---------- init ----------
             async function init() {
-                pickedSet.clear();
-                pickedList.length = 0;
-                savedPeople.length = 0;
-                roundPicks = [];
-                currentPerson = null;
-                lastTargetNumber = null;
-                currentAngle = 0;
-                drawWheel(0);
-                updateDisplays();
-                spinBtn.disabled = false;
-                isSpinning = false;
-                overlay.classList.remove('active');
-                overlayImage.hidden = true;
-                overlayImage.removeAttribute('src');
-                overlayInitial.hidden = false;
-                spinDurationEl.textContent = '5s';
-                updateSpeedBar(0);
-                rotationCountEl.textContent = '5+';
+                resetLocalState();
                 initAudio();
 
                 const client = initializeSupabaseClient();
@@ -753,6 +793,7 @@
                         showToast('No Supabase people found. Using sample names.');
                     }
                     await loadPersistedState();
+                    subscribeToWheelState();
                 } else {
                     console.warn('Supabase is not configured yet. Replace the URL and anon key in script.js to enable cloud syncing.');
                 }
