@@ -49,6 +49,7 @@
             let supabaseClient = null;
             let supabaseReady = false;
             let wheelStateChannel = null;
+            let spinCommandChannel = null;
             let pendingRemoteState = null;
 
             const supabaseConfig = window.FAREWELL_SUPABASE_CONFIG || {};
@@ -288,6 +289,30 @@
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {
                             console.info('Realtime wheel sync connected.');
+                        }
+                    });
+            }
+
+            function subscribeToSpinCommands() {
+                const client = initializeSupabaseClient();
+                if (!client || spinCommandChannel) return;
+
+                spinCommandChannel = client
+                    .channel('spin-command-live')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'spin_commands'
+                        },
+                        () => {
+                            spinWheel();
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.info('Realtime spin remote connected.');
                         }
                     });
             }
@@ -794,6 +819,7 @@
                     }
                     await loadPersistedState();
                     subscribeToWheelState();
+                    subscribeToSpinCommands();
                 } else {
                     console.warn('Supabase is not configured yet. Replace the URL and anon key in script.js to enable cloud syncing.');
                 }
