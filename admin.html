@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>45-SPIN Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="admin-body">
+    <main class="admin-shell">
+        <section class="admin-hero">
+            <div>
+                <a class="admin-back-link" href="farewell.html"><i class="fas fa-arrow-left"></i> wheel</a>
+                <h1><i class="fas fa-user-pen"></i> Person Admin</h1>
+                <p>Add names, details, and photos for the 45-SPIN farewell wheel.</p>
+            </div>
+            <div class="admin-hero-actions">
+                <div class="admin-status" id="connectionStatus">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    checking login
+                </div>
+                <button class="clear-btn" id="logoutBtn" type="button"><i class="fas fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </section>
+
+        <section class="admin-layout">
+            <form class="admin-form" id="personForm">
+                <div class="form-card-title">
+                    <h2>New Person</h2>
+                    <span id="formMode">ready</span>
+                </div>
+
+                <label class="field-label" for="personNumber">Number</label>
+                <input id="personNumber" name="number" type="number" min="1" max="45" placeholder="1 - 45" required />
+
+                <label class="field-label" for="personName">Name</label>
+                <input id="personName" name="name" type="text" maxlength="80" placeholder="Full name" required />
+
+                <label class="field-label" for="personRole">Detail</label>
+                <input id="personRole" name="role" type="text" maxlength="120" placeholder="Batch, role, nickname..." />
+
+                <label class="field-label" for="personNote">Message</label>
+                <textarea id="personNote" name="note" maxlength="240" placeholder="Short farewell detail"></textarea>
+
+                <label class="field-label" for="personColor">Accent</label>
+                <div class="color-row">
+                    <input id="personColor" name="color" type="color" value="#f1c40f" />
+                    <span>Used on the wheel segment and fallback avatar.</span>
+                </div>
+
+                <label class="image-drop" for="personImage" id="imageDrop">
+                    <input id="personImage" name="image" type="file" accept="image/*" />
+                    <img id="imagePreview" alt="" />
+                    <span class="image-drop-copy">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        <strong>Upload image</strong>
+                        <small>JPG, PNG, or WebP</small>
+                    </span>
+                </label>
+
+                <div class="admin-actions">
+                    <button class="clear-btn" type="reset"><i class="fas fa-rotate-left"></i> Reset</button>
+                    <button class="spin-btn" type="submit" id="savePersonBtn"><i class="fas fa-floppy-disk"></i> Save</button>
+                </div>
+            </form>
+
+            <section class="people-panel">
+                <div class="setup-panel" id="setupPanel" hidden>
+                    <div>
+                        <h2><i class="fas fa-database"></i> Supabase setup needed</h2>
+                        <p>The admin page is connected, but Supabase returned 404 for the people table. Run the SQL from <strong>supabase-setup.sql</strong> in your Supabase SQL editor, then refresh.</p>
+                    </div>
+                    <button class="clear-btn" id="copySetupBtn" type="button"><i class="fas fa-copy"></i> Copy SQL</button>
+                </div>
+                <div class="people-panel-head">
+                    <div>
+                        <h2>People</h2>
+                        <span id="peopleCount">0 saved</span>
+                    </div>
+                    <button class="clear-btn" id="refreshPeopleBtn" type="button"><i class="fas fa-arrows-rotate"></i> Refresh</button>
+                </div>
+                <div class="admin-people-grid" id="peopleGrid">
+                    <div class="admin-empty">
+                        <i class="fas fa-address-book"></i>
+                        <span>No people yet</span>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="admin.js" defer></script>
+</body>
+</html>
