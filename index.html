@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -38,7 +38,10 @@
                             <div class="big-number" id="bigNumber">42</div>
                             <div class="big-label"> selected</div>
                             <div class="overlay-person" id="overlayPerson">
-                                <div class="overlay-avatar" id="overlayAvatar">E</div>
+                                <div class="overlay-avatar" id="overlayAvatar">
+                                    <img id="overlayImage" alt="" />
+                                    <span id="overlayInitial">E</span>
+                                </div>
                                 <div class="overlay-name" id="overlayName">Emma Watson</div>
                                 <div class="overlay-number" id="overlayNumber">#42</div>
                             </div>
@@ -99,7 +102,7 @@
         </div>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-e    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="script.js" defer></script>
 </body>
