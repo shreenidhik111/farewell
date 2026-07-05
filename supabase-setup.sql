@@ -11,14 +11,7 @@ create table if not exists public.people (
     created_at timestamptz not null default now()
 );
 
-create table if not exists public.wheel_state (
-    id text primary key,
-    data jsonb not null,
-    updated_at timestamptz not null default now()
-);
-
 alter table public.people enable row level security;
-alter table public.wheel_state enable row level security;
 
 drop policy if exists "Public can read people" on public.people;
 create policy "Public can read people"
@@ -47,27 +40,6 @@ on public.people for delete
 to authenticated
 using (true);
 
-drop policy if exists "Public can read wheel state" on public.wheel_state;
-create policy "Public can read wheel state"
-on public.wheel_state for select
-using (true);
-
-drop policy if exists "Public can write wheel state" on public.wheel_state;
-create policy "Public can write wheel state"
-on public.wheel_state for insert
-with check (true);
-
-drop policy if exists "Public can update wheel state" on public.wheel_state;
-create policy "Public can update wheel state"
-on public.wheel_state for update
-using (true)
-with check (true);
-
-drop policy if exists "Public can delete wheel state" on public.wheel_state;
-create policy "Public can delete wheel state"
-on public.wheel_state for delete
-using (true);
-
 insert into storage.buckets (id, name, public)
 values ('person-images', 'person-images', true)
 on conflict (id) do update set public = true;
@@ -91,3 +63,4 @@ on storage.objects for update
 to authenticated
 using (bucket_id = 'person-images')
 with check (bucket_id = 'person-images');
+
