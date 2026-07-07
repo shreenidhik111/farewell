@@ -43,12 +43,6 @@
                 <label class="field-label" for="personNote">Message</label>
                 <textarea id="personNote" name="note" maxlength="240" placeholder="Short farewell detail"></textarea>
 
-                <label class="field-label" for="personColor">Accent</label>
-                <div class="color-row">
-                    <input id="personColor" name="color" type="color" value="#f1c40f" />
-                    <span>Used on the wheel segment and fallback avatar.</span>
-                </div>
-
                 <label class="image-drop" for="personImage" id="imageDrop">
                     <input id="personImage" name="image" type="file" accept="image/*" />
                     <img id="imagePreview" alt="" />
@@ -80,6 +74,20 @@
                     </div>
                     <button class="clear-btn" id="refreshPeopleBtn" type="button"><i class="fas fa-arrows-rotate"></i> Refresh</button>
                 </div>
+                <section class="cancelled-panel" id="cancelledPanel">
+                    <div class="people-panel-head compact">
+                        <div>
+                            <h2>Cancelled Picks</h2>
+                            <span id="cancelledCount">0 waiting</span>
+                        </div>
+                    </div>
+                    <div class="cancelled-grid" id="cancelledGrid">
+                        <div class="admin-empty compact-empty">
+                            <i class="fas fa-circle-check"></i>
+                            <span>No cancelled picks waiting</span>
+                        </div>
+                    </div>
+                </section>
                 <div class="admin-people-grid" id="peopleGrid">
                     <div class="admin-empty">
                         <i class="fas fa-address-book"></i>
