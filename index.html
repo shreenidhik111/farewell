@@ -101,6 +101,19 @@
             </div>
         </div>
     </div>
+    <section class="round-complete-overlay" id="roundCompleteOverlay" aria-live="polite" aria-hidden="true">
+        <div class="round-complete-shell">
+            <div class="round-complete-head">
+                <span><i class="fas fa-trophy"></i> round complete</span>
+                <strong>5 selected</strong>
+            </div>
+            <div class="round-complete-grid" id="roundCompleteGrid"></div>
+            <button class="round-complete-next" id="roundCompleteNext" type="button">
+                <i class="fas fa-arrow-right"></i>
+                Next
+            </button>
+        </div>
+    </section>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
