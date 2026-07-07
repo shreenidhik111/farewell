@@ -17,8 +17,8 @@
                 "#ff9f1c", "#2ec4b6", "#e71d36", "#7bdff2", "#b2f7ef",
                 "#ff70a6", "#70d6ff", "#ff9770", "#caffbf", "#a0c4ff",
                 "#bdb2ff", "#ffc6ff", "#fdffb6", "#8ac926", "#ff595e",
-                "#1982c4", "#6a4c93", "#4cc9f0", "#f72585", "#7209b7",
-                "#3a86ff", "#ffbe0b", "#fb5607", "#43aa8b", "#577590",
+                "#1982c4", "#c77dff", "#4cc9f0", "#f72585", "#b517ff",
+                "#3a86ff", "#ffbe0b", "#fb5607", "#52b788", "#64dfdf",
                 "#f94144", "#f3722c", "#f8961e", "#90be6d", "#277da1",
                 "#c77dff", "#80ffdb", "#ffcad4", "#b8f2e6", "#ffd6a5"
             ];
@@ -533,9 +533,6 @@
                                 <div class="h-name">${escapeHtml(p.name)}</div>
                                 <div class="h-number">#${p.number}</div>
                             </div>
-                            <button class="remove-person-btn" data-number="${p.number}" aria-label="Remove ${escapeHtml(p.name)}">
-                                <i class="fas fa-xmark"></i>
-                            </button>
                         </div>
                     `).join('');
                 }
