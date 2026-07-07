@@ -12,21 +12,26 @@
                 "Amy Adams", "Jake Gyllenhaal", "Reese Witherspoon", "Mark Ruffalo", "Charlize Theron"
             ];
             const avatarColors = [
-                "#f1c40f", "#e67e22", "#e74c3c", "#3498db", "#2ecc71",
-                "#9b59b6", "#1abc9c", "#f39c12", "#d35400", "#c0392b",
-                "#2980b9", "#27ae60", "#8e44ad", "#16a085", "#2c3e50",
-                "#7f8c8d", "#f1c40f", "#e67e22", "#e74c3c", "#3498db",
-                "#2ecc71", "#9b59b6", "#1abc9c", "#f39c12", "#d35400",
-                "#c0392b", "#2980b9", "#27ae60", "#8e44ad", "#16a085",
-                "#2c3e50", "#7f8c8d", "#f1c40f", "#e67e22", "#e74c3c",
-                "#3498db", "#2ecc71", "#9b59b6", "#1abc9c", "#f39c12",
-                "#d35400", "#c0392b", "#2980b9", "#27ae60", "#8e44ad"
+                "#ffd166", "#ef476f", "#06d6a0", "#118ab2", "#f78c6b",
+                "#9b5de5", "#00bbf9", "#f15bb5", "#fee440", "#00f5d4",
+                "#ff9f1c", "#2ec4b6", "#e71d36", "#7bdff2", "#b2f7ef",
+                "#ff70a6", "#70d6ff", "#ff9770", "#caffbf", "#a0c4ff",
+                "#bdb2ff", "#ffc6ff", "#fdffb6", "#8ac926", "#ff595e",
+                "#1982c4", "#6a4c93", "#4cc9f0", "#f72585", "#7209b7",
+                "#3a86ff", "#ffbe0b", "#fb5607", "#43aa8b", "#577590",
+                "#f94144", "#f3722c", "#f8961e", "#90be6d", "#277da1",
+                "#c77dff", "#80ffdb", "#ffcad4", "#b8f2e6", "#ffd6a5"
             ];
+
+            function autoColorForNumber(number) {
+                const index = Math.abs((Number(number) || 1) - 1) % avatarColors.length;
+                return avatarColors[index];
+            }
 
             const people = Array.from({ length: 45 }, (_, i) => ({
                 number: i + 1,
                 name: names[i] || `Guest ${i+1}`,
-                color: avatarColors[i] || "#f1c40f",
+                color: autoColorForNumber(i + 1),
                 image_url: "",
                 role: "",
                 note: ""
@@ -118,7 +123,7 @@
                             name: person.name || people[index].name,
                             role: person.role || "",
                             note: person.note || "",
-                            color: person.color || people[index].color,
+                            color: autoColorForNumber(person.number),
                             image_url: person.image_url || ""
                         };
                         loadedCount += 1;
