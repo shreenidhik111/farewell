@@ -11,12 +11,13 @@
     const personName = document.getElementById('personName');
     const personRole = document.getElementById('personRole');
     const personNote = document.getElementById('personNote');
-    const personColor = document.getElementById('personColor');
     const personImage = document.getElementById('personImage');
     const imagePreview = document.getElementById('imagePreview');
     const imageDrop = document.getElementById('imageDrop');
     const peopleGrid = document.getElementById('peopleGrid');
     const peopleCount = document.getElementById('peopleCount');
+    const cancelledGrid = document.getElementById('cancelledGrid');
+    const cancelledCount = document.getElementById('cancelledCount');
     const savePersonBtn = document.getElementById('savePersonBtn');
     const refreshPeopleBtn = document.getElementById('refreshPeopleBtn');
     const connectionStatus = document.getElementById('connectionStatus');
@@ -30,6 +31,25 @@
     let currentImageUrl = '';
     let isSetupReady = true;
     let isAuthenticated = false;
+    let latestPeople = [];
+    let latestWheelState = null;
+
+    const autoColors = [
+        '#ffd166', '#ef476f', '#06d6a0', '#118ab2', '#f78c6b',
+        '#9b5de5', '#00bbf9', '#f15bb5', '#fee440', '#00f5d4',
+        '#ff9f1c', '#2ec4b6', '#e71d36', '#7bdff2', '#b2f7ef',
+        '#ff70a6', '#70d6ff', '#ff9770', '#caffbf', '#a0c4ff',
+        '#bdb2ff', '#ffc6ff', '#fdffb6', '#8ac926', '#ff595e',
+        '#1982c4', '#6a4c93', '#4cc9f0', '#f72585', '#7209b7',
+        '#3a86ff', '#ffbe0b', '#fb5607', '#43aa8b', '#577590',
+        '#f94144', '#f3722c', '#f8961e', '#90be6d', '#277da1',
+        '#c77dff', '#80ffdb', '#ffcad4', '#b8f2e6', '#ffd6a5'
+    ];
+
+    function autoColorForNumber(number) {
+        const index = Math.abs((Number(number) || 1) - 1) % autoColors.length;
+        return autoColors[index];
+    }
 
     function escapeHtml(value) {
         return String(value || '').replace(/[&<>"']/g, (char) => ({
@@ -112,7 +132,12 @@
         setupPanel.hidden = true;
         savePersonBtn.disabled = false;
         setStatus('ready', 'connected');
-        renderPeople(data || []);
+        latestPeople = (data || []).map((person) => ({
+            ...person,
+            color: autoColorForNumber(person.number)
+        }));
+        renderPeople(latestPeople);
+        await loadWheelState();
     }
 
     function renderPeople(people) {
@@ -152,6 +177,87 @@
         }).join('');
     }
 
+    function getStateListNumbers(list) {
+        if (!Array.isArray(list)) return [];
+        return list
+            .map((person) => Number(person && person.number))
+            .filter((number) => Number.isInteger(number));
+    }
+
+    function getCancelledNumbers(state) {
+        const data = state || {};
+        const pickedNumbers = Array.isArray(data.pickedNumbers)
+            ? data.pickedNumbers.map(Number).filter((number) => Number.isInteger(number))
+            : [];
+        const visibleNumbers = new Set([
+            ...getStateListNumbers(data.pickedList),
+            ...getStateListNumbers(data.savedPeople),
+            ...getStateListNumbers(data.roundPicks)
+        ]);
+
+        return pickedNumbers
+            .filter((number) => !visibleNumbers.has(number))
+            .sort((a, b) => a - b);
+    }
+
+    async function loadWheelState() {
+        if (!client || !isAuthenticated || !isSetupReady) return;
+
+        const { data, error } = await client
+            .from('wheel_state')
+            .select('data')
+            .eq('id', 'main')
+            .maybeSingle();
+
+        if (error) {
+            latestWheelState = null;
+            renderCancelledPicks([]);
+            showToast(error.message);
+            return;
+        }
+
+        latestWheelState = data?.data || null;
+        renderCancelledPicks(getCancelledNumbers(latestWheelState));
+    }
+
+    function renderCancelledPicks(numbers) {
+        cancelledCount.textContent = `${numbers.length} waiting`;
+
+        if (!numbers.length) {
+            cancelledGrid.innerHTML = `
+                <div class="admin-empty compact-empty">
+                    <i class="fas fa-circle-check"></i>
+                    <span>No cancelled picks waiting</span>
+                </div>
+            `;
+            return;
+        }
+
+        cancelledGrid.innerHTML = numbers.map((number) => {
+            const person = latestPeople.find((item) => Number(item.number) === number) || { number, name: `Number ${number}` };
+            const image = person.image_url || '';
+            const initial = escapeHtml((person.name || '?').charAt(0).toUpperCase());
+            const color = autoColorForNumber(number);
+            return `
+                <article class="admin-person-card cancelled-card">
+                    <div class="admin-person-media" style="--avatar-color:${escapeHtml(color)}">
+                        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(person.name)}" loading="lazy" data-fallback="${initial}" />` : `<span>${initial}</span>`}
+                    </div>
+                    <div class="admin-person-info">
+                        <div class="admin-person-top">
+                            <strong>${escapeHtml(person.name)}</strong>
+                            <span>#${escapeHtml(number)}</span>
+                        </div>
+                        <p>Removed from results, still blocked from spinning.</p>
+                    </div>
+                    <div class="admin-card-actions">
+                        <button type="button" class="icon-admin-btn success" data-readd="${escapeHtml(number)}" aria-label="Re-add ${escapeHtml(person.name)} to spin"><i class="fas fa-rotate-left"></i></button>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
     async function savePerson(event) {
         event.preventDefault();
         if (!isAuthenticated) {
@@ -185,7 +291,7 @@
                 name: personName.value.trim(),
                 role: personRole.value.trim(),
                 note: personNote.value.trim(),
-                color: personColor.value,
+                color: autoColorForNumber(number),
                 image_url: imageUrl || null
             };
 
@@ -216,7 +322,6 @@
         imagePreview.removeAttribute('src');
         imageDrop.classList.remove('has-image');
         formMode.textContent = 'ready';
-        personColor.value = '#f1c40f';
     }
 
     async function deletePerson(id) {
@@ -242,7 +347,6 @@
         personName.value = person.name || '';
         personRole.value = person.role || '';
         personNote.value = person.note || '';
-        personColor.value = person.color || '#f1c40f';
         formMode.textContent = `editing #${person.number}`;
 
         if (currentImageUrl) {
@@ -254,6 +358,43 @@
         }
 
         personName.focus();
+    }
+
+    async function readdCancelledPick(number) {
+        const parsedNumber = Number(number);
+        if (!Number.isInteger(parsedNumber)) return;
+
+        const state = latestWheelState || {};
+        const withoutNumber = (list) => Array.isArray(list)
+            ? list.filter((person) => Number(person && person.number) !== parsedNumber)
+            : [];
+
+        const nextState = {
+            ...state,
+            pickedNumbers: Array.isArray(state.pickedNumbers)
+                ? state.pickedNumbers.map(Number).filter((item) => item !== parsedNumber)
+                : [],
+            pickedList: withoutNumber(state.pickedList),
+            savedPeople: withoutNumber(state.savedPeople),
+            roundPicks: withoutNumber(state.roundPicks),
+            currentPerson: Number(state.currentPerson?.number) === parsedNumber ? null : state.currentPerson,
+            lastTargetNumber: Number(state.lastTargetNumber) === parsedNumber ? null : state.lastTargetNumber
+        };
+
+        const { error } = await client.from('wheel_state').upsert({
+            id: 'main',
+            updated_at: new Date().toISOString(),
+            data: nextState
+        }, { onConflict: 'id' });
+
+        if (error) {
+            showToast(error.message);
+            return;
+        }
+
+        latestWheelState = nextState;
+        renderCancelledPicks(getCancelledNumbers(nextState));
+        showToast(`#${parsedNumber} can spin again.`);
     }
 
     personImage.addEventListener('change', () => {
@@ -276,19 +417,27 @@
             showToast('Open supabase-setup.sql and copy it manually.');
         }
     });
-    peopleGrid.addEventListener('click', (event) => {
+    function handleAdminCardClick(event) {
         const editButton = event.target.closest('[data-edit]');
         const deleteButton = event.target.closest('[data-delete]');
+        const readdButton = event.target.closest('[data-readd]');
         if (editButton) editPerson(JSON.parse(editButton.dataset.edit));
         if (deleteButton) deletePerson(deleteButton.dataset.delete);
-    });
+        if (readdButton) readdCancelledPick(readdButton.dataset.readd);
+    }
 
-    peopleGrid.addEventListener('error', (event) => {
+    peopleGrid.addEventListener('click', handleAdminCardClick);
+    cancelledGrid.addEventListener('click', handleAdminCardClick);
+
+    function handleCardImageError(event) {
         const image = event.target;
         if (!image.matches('.admin-person-media img')) return;
         const fallback = image.dataset.fallback || '?';
         image.replaceWith(Object.assign(document.createElement('span'), { textContent: fallback }));
-    }, true);
+    }
+
+    peopleGrid.addEventListener('error', handleCardImageError, true);
+    cancelledGrid.addEventListener('error', handleCardImageError, true);
 
     logoutBtn.addEventListener('click', async () => {
         if (client) await client.auth.signOut();
