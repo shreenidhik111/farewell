@@ -348,6 +348,9 @@
             const overlayInitial = document.getElementById('overlayInitial');
             const overlayName = document.getElementById('overlayName');
             const overlayNumber = document.getElementById('overlayNumber');
+            const roundCompleteOverlay = document.getElementById('roundCompleteOverlay');
+            const roundCompleteGrid = document.getElementById('roundCompleteGrid');
+            const roundCompleteNext = document.getElementById('roundCompleteNext');
 
             const NUM_SEGMENTS = 45;
             const PI = Math.PI;
@@ -563,6 +566,29 @@
                 }, 2200);
             }
 
+            function hideRoundCompleteOverlay() {
+                if (!roundCompleteOverlay) return;
+                roundCompleteOverlay.classList.remove('active');
+                roundCompleteOverlay.setAttribute('aria-hidden', 'true');
+            }
+
+            function showRoundCompleteOverlay() {
+                if (!roundCompleteOverlay || !roundCompleteGrid) return;
+
+                roundCompleteGrid.innerHTML = roundPicks.map((person) => `
+                    <div class="round-complete-item">
+                        ${getAvatarMarkup(person, 'round-complete-avatar')}
+                        <div class="round-complete-name">${escapeHtml(person.name)}</div>
+                        <div class="round-complete-number">#${person.number}</div>
+                    </div>
+                `).join('');
+
+                roundCompleteOverlay.classList.add('active');
+                roundCompleteOverlay.setAttribute('aria-hidden', 'false');
+                applyAvatarColors();
+                roundCompleteNext?.focus();
+            }
+
             // ---------- SPIN with MORE THAN 5 ROTATIONS and 5 SECONDS ----------
             function spinWheel() {
                 if (isSpinning) return;
@@ -712,11 +738,16 @@
                             spinBtn.disabled = false;
                             flushPendingRemoteState();
 
-                            if (pickedSet.size >= 45) {
+                            if (roundPicks.length >= ROUND_SIZE) {
+                                setTimeout(() => {
+                                    showRoundCompleteOverlay();
+                                    showToast('Round complete. Review the results and continue.');
+                                }, 250);
+                            } else if (pickedSet.size >= 45) {
                                 setTimeout(() => {
                                     showToast('Wheel is empty. Click Next to save the final picks.');
                                 }, 300);
-                            } else if (roundPicks.length >= ROUND_SIZE) {
+                            } else {
                                 setTimeout(() => {
                                     showToast(`${ROUND_SIZE} selected. Click Next to save this round.`);
                                 }, 300);
@@ -766,6 +797,8 @@
             }
 
             function saveCurrentAndShowSaved() {
+                hideRoundCompleteOverlay();
+
                 if (pickedList.length === 0) {
                     showToast('Spin first, then click Next to save.');
                     return;
@@ -831,6 +864,7 @@
             spinBtn.addEventListener('click', spinWheel);
             clearBtn.addEventListener('click', () => clearAllState());
             nextBtn.addEventListener('click', saveCurrentAndShowSaved);
+            roundCompleteNext?.addEventListener('click', saveCurrentAndShowSaved);
 
             document.addEventListener('click', (e) => {
                 const removeButton = e.target.closest('.remove-person-btn');
